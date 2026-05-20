@@ -1,0 +1,316 @@
+openapi: 3.0.0
+info:
+  title: Mobile Backend API Documentation
+  version: 1.0.0
+  description: |-
+    API documentation for the mobile backend service.
+    Provides authentication, assignment management, and test data submissions.
+    Some useful links:
+    - [The Mobile_backend repository](https://github.com/HvH1110/Mobile_backend)
+servers:
+  - url: http://localhost:8080
+    description: Local server
+tags:
+  - name: auth
+    description: Authentication endpoints for user access
+  - name: assignments
+    description: Endpoints for creating and listing assignments
+  - name: submissions
+    description: Endpoints for submitting test data
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        description: Create a new user account.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterBody'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: Log in a user
+      operationId: loginUser
+      requestBody:
+        description: The user login credentials.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginBody'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: User not found or invalid password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Database error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /api/assignments:
+    post:
+      tags:
+        - assignments
+      summary: Create an assignment (teacher only)
+      operationId: createAssignment
+      requestBody:
+        description: Assignment details.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreateBody'
+      responses:
+        '201':
+          description: Assignment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Missing or invalid token, or insufficient privileges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to create assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - assignments
+      summary: List assignments
+      operationId: listAssignments
+      responses:
+        '200':
+          description: Assignments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+        '403':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to fetch assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/submissions:
+    post:
+      tags:
+        - submissions
+      summary: Submit test data
+      operationId: createSubmission
+      requestBody:
+        description: Test submission payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionBody'
+      responses:
+        '201':
+          description: Data saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to save data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterBody:
+      type: object
+      required:
+        - email
+        - password
+        - role
+      properties:
+        email:
+          type: string
+          example: "student@example.com"
+        password:
+          type: string
+          example: "Passw0rd!"
+        role:
+          type: string
+          example: "student"
+    LoginBody:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: "student@example.com"
+        password:
+          type: string
+          example: "Passw0rd!"
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Login successful"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        role:
+          type: string
+          example: "student"
+    AssignmentCreateBody:
+      type: object
+      required:
+        - title
+        - description
+        - dueDate
+      properties:
+        title:
+          type: string
+          example: "Physics Lab Report"
+        description:
+          type: string
+          example: "Submit results for the latest drop test."
+        dueDate:
+          type: string
+          format: date-time
+          example: "2026-05-30T23:59:59Z"
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        teacher_id:
+          type: integer
+          example: 3
+        title:
+          type: string
+          example: "Physics Lab Report"
+        description:
+          type: string
+          example: "Submit results for the latest drop test."
+        due_date:
+          type: string
+          format: date-time
+          example: "2026-05-30T23:59:59Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-20T08:30:00Z"
+    SubmissionBody:
+      type: object
+      required:
+        - testNum
+        - time
+        - speed
+        - velocity
+        - acc
+      properties:
+        testNum:
+          type: integer
+          example: 1
+        time:
+          type: number
+          format: float
+          example: 2.45
+        speed:
+          type: number
+          format: float
+          example: 15.2
+        velocity:
+          type: number
+          format: float
+          example: 14.8
+        acc:
+          type: number
+          format: float
+          example: 9.81
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation successful"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Database error"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Use the `Bearer` scheme to authenticate requests. Include the token in the `Authorization` header as follows:
+        ```
+        Authorization: Bearer <your_token>
+        ```
+
+security:
+  - BearerAuth: []
